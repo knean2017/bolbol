@@ -25,8 +25,19 @@ class SubCategory(models.Model):
 
 
 class Attribute(models.Model):
+    TYPES = [
+        ("string", "String"),
+        ("integer", "Integer"),
+        ("float", "Float"),
+        ("boolean", "Boolean"),
+    ]
     subcategory = models.ForeignKey(SubCategory, null=True, on_delete=models.SET_NULL)
     name = models.CharField(max_length=50)
+    data_type = models.CharField(
+        max_length=50,
+        choices=TYPES
+    )
+    
 
     def __str__(self):
         return self.name
