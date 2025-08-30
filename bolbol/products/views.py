@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
+from rest_framework import status
 
 from .models import Category, SubCategory, Attribute, City, Product, ProductDetail
 from .serializers import (CategorySerializer, SubCategorySerializer, AttributeSerializer, 
