@@ -35,7 +35,8 @@ class Attribute(models.Model):
     name = models.CharField(max_length=50)
     data_type = models.CharField(
         max_length=50,
-        choices=TYPES
+        choices=TYPES,
+        default="string"
     )
     
 
