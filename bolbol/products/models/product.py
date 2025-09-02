@@ -1,9 +1,12 @@
 from django.db import models
+from django.db.models import F
+from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
+
 from ..constants import *
 from .category import SubCategory, Attribute
 from .city import City
-from django.db.models import F
 
 
 class Product(models.Model):
@@ -65,6 +68,9 @@ class Product(models.Model):
         self.save(update_fields=["views_count"])
         self.refresh_from_db()
 
+    def get_absolute_url(self):
+        path = reverse("product-detail", kwargs={"prod_id": self.id})
+        return f"{settings.DOMAIN}{path}"
 
 class ProductDetail(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)

@@ -11,25 +11,25 @@ class ProductAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Group subcategories by main category in the display
+        # Group subcategories by main category in the display (with optgroups)
         if 'category' in self.fields:
             subcategories = SubCategory.objects.select_related('category').order_by('category__name', 'name')
-            choices = [('', '---------')]
+            grouped_choices = {}
             
-            current_category = None
             for subcategory in subcategories:
-                if subcategory.category != current_category:
-                    if current_category is not None:
-                        choices.append(('', '---'))  # Separator
-                    current_category = subcategory.category
-                
-                choice_label = f"{subcategory.category.name} → {subcategory.name}"
-                choices.append((subcategory.id, choice_label))
+                group_label = subcategory.category.name
+                if group_label not in grouped_choices:
+                    grouped_choices[group_label] = []
+                grouped_choices[group_label].append((subcategory.id, subcategory.name))
+            
+            choices = [('', '---------')]
+            for group, items in grouped_choices.items():
+                choices.append((group, items))  # optgroup
             
             self.fields['category'].choices = choices
 
 
-# Keep all other admin classes the same...
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'description']
@@ -42,6 +42,8 @@ class SubCategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'category', 'description']
     search_fields = ['name', 'category__name']
     list_filter = ['category']
+    autocomplete_fields = ['category']  # 🔍 searchable
+    list_select_related = ['category']  # ⚡ faster
 
 
 @admin.register(City)
@@ -56,6 +58,8 @@ class AttributeAdmin(admin.ModelAdmin):
     list_display = ['name', 'subcategory']
     search_fields = ['name', 'subcategory__name']
     list_filter = ['subcategory__category', 'subcategory']
+    autocomplete_fields = ['subcategory']  # 🔍 searchable
+    list_select_related = ['subcategory', 'subcategory__category']  # ⚡ faster
 
 
 class ProductDetailInlineForm(forms.ModelForm):
@@ -66,31 +70,34 @@ class ProductDetailInlineForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Group attributes by subcategory in the display
+        # Group attributes by subcategory in the display (with optgroups)
         if 'attribute' in self.fields:
             attributes = Attribute.objects.select_related('subcategory__category').order_by('subcategory__category__name', 'subcategory__name', 'name')
-            choices = [('', '---------')]
+            grouped_choices = {}
             
-            current_subcategory = None
             for attribute in attributes:
-                if attribute.subcategory != current_subcategory:
-                    if current_subcategory is not None:
-                        choices.append(('', '---'))  # Separator
-                    current_subcategory = attribute.subcategory
-                
                 if attribute.subcategory:
-                    choice_label = f"{attribute.subcategory.category.name} → {attribute.subcategory.name} → {attribute.name}"
+                    group_label = f"{attribute.subcategory.category.name} → {attribute.subcategory.name}"
                 else:
-                    choice_label = f"No Category → {attribute.name}"
-                choices.append((attribute.id, choice_label))
+                    group_label = "No Category"
+                
+                if group_label not in grouped_choices:
+                    grouped_choices[group_label] = []
+                grouped_choices[group_label].append((attribute.id, attribute.name))
+            
+            choices = [('', '---------')]
+            for group, items in grouped_choices.items():
+                choices.append((group, items))  # optgroup
             
             self.fields['attribute'].choices = choices
+
 
 
 class ProductDetailInline(admin.TabularInline):
     model = ProductDetail
     form = ProductDetailInlineForm
     extra = 2
+    classes = ['collapse']  # 👌 collapsible inline
 
 
 @admin.register(Product)
@@ -98,7 +105,7 @@ class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     
     list_display = [
-        'name', 'get_category_name', 'category', 'city', 
+        'name', 'get_category_name', 'category', 'city',
         'price', 'promotion_level', 'created_at'
     ]
     
@@ -116,7 +123,8 @@ class ProductAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Basic Information', {
             'fields': ('name', 'description', 'category', 'city'),
-            'description': 'Choose subcategory from the grouped list (Category → Subcategory). Product details will show attributes grouped by subcategory.'
+            'description': 'Choose subcategory from the grouped list (Category → Subcategory). '
+                           'Product details will show attributes grouped by subcategory.'
         }),
         ('Pricing & Features', {
             'fields': ('price', 'promotion_level', 'image')
@@ -135,9 +143,12 @@ class ProductAdmin(admin.ModelAdmin):
         return obj.category.category.name if obj.category and obj.category.category else '-'
     get_category_name.short_description = 'Main Category'
 
+    list_select_related = ['category', 'category__category', 'city']  # ⚡ faster
+
 
 @admin.register(ProductDetail)
 class ProductDetailAdmin(admin.ModelAdmin):
     list_display = ['product', 'attribute', 'value']
     search_fields = ['product__name', 'attribute__name', 'value']
     list_filter = ['attribute__subcategory__category']
+    list_select_related = ['product', 'attribute', 'attribute__subcategory', 'attribute__subcategory__category']  # ⚡
