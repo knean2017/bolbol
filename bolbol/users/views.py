@@ -3,13 +3,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg.utils import swagger_auto_schema
 
 from .models import User
 from products.utils import generate_otp, verify_otp
 from products.constants import OTP_TIMEOUT
+from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer
 
 
 class LoginAPIView(APIView):
+    @swagger_auto_schema(request_body=LoginRequestSerializer)
     def post(self, request):
         phone = request.data.get("phone")
 
@@ -25,6 +28,7 @@ class LoginAPIView(APIView):
     
 
 class VerifyOTPCodeAPIView(APIView):
+    @swagger_auto_schema(request_body=VerifyOTPSerializer, responses={200: LoginResponseSerializer})
     def post(self, request):
         phone = request.data.get("phone")
         otp = request.data.get("otp")

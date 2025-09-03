@@ -3,7 +3,6 @@ from django.conf import Settings
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import BaseUserManager
 
-from products.models import Product
 
 
 class UserManager(BaseUserManager):
@@ -66,3 +65,6 @@ class User(AbstractUser):
 class Bookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     product = models.ForeignKey("products.Product", on_delete=models.SET_NULL, null=True)
+
+    # class Meta:
+    #     managed = False # This model is managed manually

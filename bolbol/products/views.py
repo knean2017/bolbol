@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
 
 
 from .models import Category, SubCategory, Attribute, City, Product, ProductDetail
@@ -25,10 +26,11 @@ class CityAPIView(APIView):
 
 class ProductAPIView(APIView):
     def get(self, request):
-        products = request.data.get("products")
+        products = Product.objects.filter(status="accepted")
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(request_body=ProductSerializer)
     def post(self,request):
         data = request.data
         serializer = ProductSerializer(data=data)

@@ -45,7 +45,7 @@ class UserAdmin(BaseUserAdmin):
     # Enhanced list view with more relevant fields
     list_display = (
         "email", "get_name", "user_type", "phone_verified", 
-        "is_staff", "is_active", "get_bookmarks_count", "date_joined"
+        "is_staff", "is_active", "get_products_count", "get_bookmarks_count", "date_joined"
     )
     list_filter = (
         "user_type", "phone_verified", "is_staff", 
@@ -100,6 +100,16 @@ class UserAdmin(BaseUserAdmin):
     get_name.short_description = "Name/Store"
     get_name.admin_order_field = "first_name"
 
+    def get_products_count(self, obj):
+        count = obj.product_set.count()
+        if count > 0:
+            return format_html(
+                '<span style="color: #007cba;">🛍️ {}</span>', 
+                count
+            )
+        return "0"
+    get_products_count.short_description = "Products"
+
     def get_bookmarks_count(self, obj):
         count = obj.bookmark_set.count()
         if count > 0:
@@ -132,13 +142,13 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(Bookmark)
 class BookmarkAdmin(admin.ModelAdmin):
     list_display = ("user", "get_product_name", "get_product_price", "get_user_type")
-    search_fields = ("user__email", "product__name", "user__store_name")
+    search_fields = ("user__email", "product__title", "user__store_name")
     list_filter = ("product__category", "user__user_type")
     autocomplete_fields = ["user", "product"]
 
     def get_product_name(self, obj):
         if obj.product:
-            return obj.product.name
+            return obj.product.title
         return "-"
     get_product_name.short_description = "Product"
 

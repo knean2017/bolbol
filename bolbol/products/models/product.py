@@ -23,10 +23,10 @@ class Product(models.Model):
     )
 
     owner = models.ForeignKey("users.User", on_delete=models.SET_NULL, null=True, blank=True)
-    category = models.ForeignKey(SubCategory, null=True, on_delete=models.SET_NULL)
-    city = models.ForeignKey(City, null=True, on_delete=models.SET_NULL)
+    category = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True)
 
-    name = models.CharField(max_length=50)
+    title = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(
         max_digits=7,
@@ -61,7 +61,7 @@ class Product(models.Model):
 
     
     def __str__(self):
-        return self.name
+        return self.title
     
     def increment_view(self):
         self.views_count = F("views_count") + 1
