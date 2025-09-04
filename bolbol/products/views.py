@@ -4,6 +4,8 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 from .models import Category, SubCategory, Attribute, City, Product, ProductDetail
@@ -32,6 +34,9 @@ class ProductAPIView(APIView):
 
     @swagger_auto_schema(request_body=ProductSerializer)
     def post(self,request):
+        authentication_classes = [JWTAuthentication]
+        permission_classes = [IsAuthenticated]
+
         data = request.data
         serializer = ProductSerializer(data=data)
         if serializer.is_valid():

@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'products',
     'users',
+    'interactions',
 ]
 
 AUTH_USER_MODEL = "users.User" 
@@ -111,7 +114,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Baku'
 
 USE_I18N = True
 
@@ -167,4 +170,27 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'knean6703@gmail.com'
-EMAIL_HOST_PASSWORD = 'lrrz heny vlrl hwgv'  
+EMAIL_HOST_PASSWORD = 'lrrz heny vlrl hwgv'
+
+
+
+SIMPLE_JWT = {
+    # Lifetimes
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),         # short-lived access token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),           # longer-lived refresh token
+    'ROTATE_REFRESH_TOKENS': True,                         # optional: rotate refresh tokens after use
+    'BLACKLIST_AFTER_ROTATION': True,                      # optional: blacklist used refresh tokens
+
+    # Token behavior
+    'ALGORITHM': 'HS256',                                   # algorithm for signing tokens
+    'SIGNING_KEY': SECRET_KEY,                              # your Django secret key
+    'VERIFYING_KEY': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),                       # Authorization: Bearer <token>
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    # Token claims
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+}

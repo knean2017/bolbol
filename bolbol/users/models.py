@@ -60,11 +60,3 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["phone"]
 
     objects = UserManager()
-
-
-class Bookmark(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    product = models.ForeignKey("products.Product", on_delete=models.SET_NULL, null=True)
-
-    # class Meta:
-    #     managed = False # This model is managed manually

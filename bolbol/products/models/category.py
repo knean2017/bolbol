@@ -31,7 +31,7 @@ class Attribute(models.Model):
         ("float", "Float"),
         ("boolean", "Boolean"),
     ]
-    subcategory = models.ForeignKey(SubCategory, null=True, on_delete=models.SET_NULL)
+    subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=50)
     data_type = models.CharField(
         max_length=50,

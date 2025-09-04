@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Bookmark
+from .models import User
 
 
 class LoginRequestSerializer(serializers.Serializer):

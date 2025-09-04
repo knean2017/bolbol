@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include("products.urls")),
     path("api/", include("users.urls")),
+    path("api/", include("interactions.urls")),
 
     #drf_yasg
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

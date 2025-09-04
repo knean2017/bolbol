@@ -3,20 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django import forms
 from django.utils.html import format_html
 
-from .models import User, Bookmark
-
-
-class BookmarkInline(admin.TabularInline):
-    model = Bookmark
-    extra = 0
-    autocomplete_fields = ['product']
-    readonly_fields = ['get_product_price']
-    
-    def get_product_price(self, obj):
-        if obj.product:
-            return f"{obj.product.price} ₼"
-        return "-"
-    get_product_price.short_description = "Product Price"
+from .models import User
 
 
 class UserAdminForm(forms.ModelForm):
@@ -40,7 +27,6 @@ class UserAdminForm(forms.ModelForm):
 class UserAdmin(BaseUserAdmin):
     form = UserAdminForm
     model = User
-    inlines = [BookmarkInline]
 
     # Enhanced list view with more relevant fields
     list_display = (
@@ -111,7 +97,9 @@ class UserAdmin(BaseUserAdmin):
     get_products_count.short_description = "Products"
 
     def get_bookmarks_count(self, obj):
-        count = obj.bookmark_set.count()
+        # Import here to avoid circular import
+        from interactions.models import Bookmark
+        count = Bookmark.objects.filter(user=obj).count()
         if count > 0:
             return format_html(
                 '<span style="color: #28a745;">❤️ {}</span>', 
@@ -137,31 +125,3 @@ class UserAdmin(BaseUserAdmin):
         updated = queryset.update(user_type='store')
         self.message_user(request, f'{updated} users converted to store type.')
     convert_to_store.short_description = "🏪 Convert to store users"
-
-
-@admin.register(Bookmark)
-class BookmarkAdmin(admin.ModelAdmin):
-    list_display = ("user", "get_product_name", "get_product_price", "get_user_type")
-    search_fields = ("user__email", "product__title", "user__store_name")
-    list_filter = ("product__category", "user__user_type")
-    autocomplete_fields = ["user", "product"]
-
-    def get_product_name(self, obj):
-        if obj.product:
-            return obj.product.title
-        return "-"
-    get_product_name.short_description = "Product"
-
-    def get_product_price(self, obj):
-        if obj.product:
-            return f"{obj.product.price} ₼"
-        return "-"
-    get_product_price.short_description = "Price"
-
-    def get_user_type(self, obj):
-        if obj.user:
-            if obj.user.user_type == 'store':
-                return format_html('<span style="color: #0066cc;">🏪 Store</span>')
-            return format_html('<span style="color: #28a745;">👤 Individual</span>')
-        return "-"
-    get_user_type.short_description = "User Type"
