@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
@@ -27,6 +27,13 @@ class CityAPIView(APIView):
 
 
 class ProductAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [AllowAny()]
+    
     def get(self, request):
         products = Product.objects.filter(status="accepted")
         serializer = ProductSerializer(products, many=True)
@@ -34,9 +41,6 @@ class ProductAPIView(APIView):
 
     @swagger_auto_schema(request_body=ProductSerializer)
     def post(self,request):
-        authentication_classes = [JWTAuthentication]
-        permission_classes = [IsAuthenticated]
-
         data = request.data
         serializer = ProductSerializer(data=data)
         if serializer.is_valid():

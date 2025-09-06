@@ -4,11 +4,13 @@ from rest_framework.response import Response
 from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import User
-from products.utils import generate_otp, verify_otp
-from products.constants import OTP_TIMEOUT
-from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer
+from .utils import generate_otp, verify_otp
+from .constants import OTP_TIMEOUT
+from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer, UserSerializer
 
 
 class LoginAPIView(APIView):
@@ -56,3 +58,13 @@ class VerifyOTPCodeAPIView(APIView):
             "access": access_token,
             "refresh": str(refresh)
         }, status=status.HTTP_200_OK)
+    
+
+class UserAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.data
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)

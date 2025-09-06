@@ -1,7 +1,9 @@
 from django.db import models
-from django.conf import Settings
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import BaseUserManager
+
+from .utils import format_phone_number
 
 
 
@@ -60,3 +62,15 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ["phone"]
 
     objects = UserManager()
+
+
+    def clean(self):
+        super().clean()
+        if self.phone:
+            try:
+                self.phone = format_phone_number(self.phone)
+            except ValueError as e:
+                raise ValidationError({"phone": str(e)})
+
+        if self.email:
+            self.email = self.email.strip().lower()

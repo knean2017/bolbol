@@ -17,3 +17,8 @@ class LoginResponseSerializer(serializers.Serializer):
     access = serializers.CharField(help_text="JWT access token")
     refresh = serializers.CharField(help_text="JWT refresh token")
 
+
+class UserSerializer(serializers.Serializer):
+    class Meta:
+        model = User
+        fields = []

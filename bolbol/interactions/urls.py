@@ -5,5 +5,5 @@ from .views import CommentAPIView, BookmarkAPIView
 
 urlpatterns = [
     path("bookmarks/", BookmarkAPIView.as_view(), name="bookmarks"),
-    path("comments/", CommentAPIView.as_view(), name="comments"),
+    path("products/<int:product_id>/comments/", CommentAPIView.as_view(), name="comments"),
 ]
