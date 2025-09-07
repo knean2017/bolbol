@@ -39,7 +39,6 @@ def format_phone_number(phone: str):
     if len(number) == 9:
         number = "+994" + number
 
-    verify_phone_number(number)
     return number    
 
 def mask_phone_number(phone):

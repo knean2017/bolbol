@@ -26,7 +26,7 @@ class CityAPIView(APIView):
         return Response(cities)
 
 
-class ProductAPIView(APIView):
+class ProductListAPIView(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get_permissions(self):
@@ -35,8 +35,24 @@ class ProductAPIView(APIView):
         return [AllowAny()]
     
     def get(self, request):
-        products = Product.objects.filter(status="accepted")
-        serializer = ProductSerializer(products, many=True)
+        queryset = Product.objects.filter(status=Product.APPROVED)
+        
+        query_params = request.GET
+        category_pk = query_params.get("category_id")
+        min_price = query_params.get("min_price")
+        max_price = query_params.get("max_price")
+        order_by = query_params.get("order_by")
+
+        if category_pk is not None:
+            queryset = queryset.filter(category=category_pk)
+        if min_price is not None:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price is not None:
+            queryset = queryset.filter(price__lte=max_price)
+        if order_by is not None:
+            queryset = queryset.order_by(order_by)
+
+        serializer = ProductSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(request_body=ProductSerializer)

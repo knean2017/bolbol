@@ -10,6 +10,7 @@ class Bookmark(models.Model):
 
     class Meta:
         unique_together = ["user", "product"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user} bookmarked {self.product}"
@@ -21,6 +22,10 @@ class Comment(models.Model):
     comment = models.TextField()
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["user", "product"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user} commented on {self.product}"

@@ -244,13 +244,13 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = [
         ProductStatusFilter, ProductPriceRangeFilter, ProductPromotionFilter,
         ProductEngagementFilter, ProductAgeFilter,
-        'barter_available', 'credit_available', 'delivery_available', 
-        'category__category', 'city', 'owner__user_type'
+        'is_barter_available', 'is_credit_available', 'is_delivery_available', 
+        'category__category', 'city'
     ]
     
     search_fields = [
         'title', 'description', 'category__name', 'category__category__name',
-        'owner__email', 'owner__store_name', 'owner__first_name'
+        'owner__email', 'owner__first_name'
     ]
     
     readonly_fields = ['views_count', 'created_at', 'updated_at', 'get_analytics_summary']
@@ -263,7 +263,7 @@ class ProductAdmin(admin.ModelAdmin):
     
     # Optimize database queries
     list_select_related = [
-        'owner', 'category', 'category__category', 'city'
+        'owner', 'store', 'category', 'category__category', 'city'
     ]
     
     def get_queryset(self, request):
@@ -277,15 +277,16 @@ class ProductAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('📋 Basic Information', {
-            'fields': ('owner', 'title', 'description', 'category', 'city'),
+            'fields': ('owner', 'store', 'title', 'description', 'category', 'city'),
             'description': 'Choose subcategory from the grouped list (Category → Subcategory). '
-                           'Product details will show attributes grouped by subcategory.'
+                           'Product details will show attributes grouped by subcategory. '
+                           'If owner is a store user, you can also link to a specific Store record.'
         }),
         ('💰 Pricing & Features', {
-            'fields': ('price', 'promotion_level', 'image')
+            'fields': ('price', 'promotion_level', 'image', 'is_product_new')
         }),
         ('⚙️ Status & Availability', {
-            'fields': ('status', 'barter_available', 'credit_available', 'delivery_available'),
+            'fields': ('status', 'is_mediator', 'is_barter_available', 'is_credit_available', 'is_delivery_available'),
         }),
         ('📊 Analytics & Engagement', {
             'fields': ('views_count', 'get_analytics_summary'),
@@ -306,11 +307,18 @@ class ProductAdmin(admin.ModelAdmin):
     def get_owner_info(self, obj):
         if obj.owner:
             owner_url = reverse('admin:users_user_change', args=[obj.owner.pk])
-            if obj.owner.user_type == 'store' and obj.owner.store_name:
-                return format_html(
-                    '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
-                    owner_url, obj.owner.store_name, obj.owner.email
-                )
+            # Check if user might be a store by looking for Store records
+            try:
+                from users.models import Store
+                store = Store.objects.filter(name__icontains=obj.owner.first_name).first() if obj.owner.first_name else None
+                if store:
+                    return format_html(
+                        '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
+                        owner_url, store.name, obj.owner.email
+                    )
+            except:
+                pass
+            
             return format_html(
                 '<a href="{}" style="color: #28a745;">👤 {}</a><br><small>{}</small>',
                 owner_url, obj.owner.first_name or obj.owner.email.split('@')[0], obj.owner.email
@@ -464,7 +472,7 @@ class ProductAdmin(admin.ModelAdmin):
     reset_views.short_description = "🔄 Reset view counts"
     
     def bulk_enable_delivery(self, request, queryset):
-        updated = queryset.update(delivery_available=True)
+        updated = queryset.update(is_delivery_available=True)
         self.message_user(request, f'🚚 {updated} products now offer delivery.')
     bulk_enable_delivery.short_description = "🚚 Enable delivery for selected"
     

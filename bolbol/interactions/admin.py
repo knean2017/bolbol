@@ -154,11 +154,11 @@ class BookmarkAdmin(admin.ModelAdmin):
     )
     list_filter = (
         ActivityDateFilter, ProductStatusFilter, UserEngagementFilter,
-        "product__category", "user__user_type", "product__city",
+        "product__category", "product__city",
         "product__promotion_level"
     )
     search_fields = (
-        "user__email", "user__first_name", "user__store_name",
+        "user__email", "user__first_name",
         "product__title", "product__description", "product__owner__email"
     )
     autocomplete_fields = ["user", "product"]
@@ -197,16 +197,23 @@ class BookmarkAdmin(admin.ModelAdmin):
     def get_user_info(self, obj):
         if obj.user:
             user_link = reverse("admin:users_user_change", args=[obj.user.pk])
-            if obj.user.user_type == 'store' and obj.user.store_name:
-                return format_html(
-                    '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
-                    user_link, obj.user.store_name, obj.user.email
-                )
-            else:
-                return format_html(
-                    '<a href="{}" style="color: #28a745;">👤 {}</a><br><small>{}</small>',
-                    user_link, obj.user.first_name or obj.user.email.split('@')[0], obj.user.email
-                )
+            if obj.user.first_name:
+                # Check if user might be a store by looking for Store records
+                try:
+                    from users.models import Store
+                    store = Store.objects.filter(name__icontains=obj.user.first_name).first()
+                    if store:
+                        return format_html(
+                            '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
+                            user_link, store.name, obj.user.email
+                        )
+                except:
+                    pass
+            
+            return format_html(
+                '<a href="{}" style="color: #28a745;">👤 {}</a><br><small>{}</small>',
+                user_link, obj.user.first_name or obj.user.email.split('@')[0], obj.user.email
+            )
         return "-"
     get_user_info.short_description = "User"
     get_user_info.admin_order_field = "user__email"
@@ -242,12 +249,18 @@ class BookmarkAdmin(admin.ModelAdmin):
     
     def get_user_type(self, obj):
         if obj.user:
-            if obj.user.user_type == 'store':
-                return format_html('<span style="color: #0066cc;">🏪 Store</span>')
+            # Check if user might be a store by looking for Store records
+            try:
+                from users.models import Store
+                store = Store.objects.filter(name__icontains=obj.user.first_name).first() if obj.user.first_name else None
+                if store:
+                    return format_html('<span style="color: #0066cc;">🏪 Store</span>')
+            except:
+                pass
             return format_html('<span style="color: #28a745;">👤 Individual</span>')
         return "-"
     get_user_type.short_description = "User Type"
-    get_user_type.admin_order_field = "user__user_type"
+    get_user_type.admin_order_field = "user__email"
     
     def get_product_category(self, obj):
         if obj.product and obj.product.category:
@@ -371,11 +384,11 @@ class CommentAdmin(admin.ModelAdmin):
     )
     list_filter = (
         ActivityDateFilter, ProductStatusFilter, UserEngagementFilter,
-        "user__user_type", "product__category", 
+        "product__category", 
         "product__city", "product__promotion_level"
     )
     search_fields = (
-        "user__email", "user__first_name", "user__store_name",
+        "user__email", "user__first_name",
         "product__title", "comment", "product__owner__email"
     )
     autocomplete_fields = ["user", "product"]
@@ -414,16 +427,23 @@ class CommentAdmin(admin.ModelAdmin):
     def get_user_info(self, obj):
         if obj.user:
             user_link = reverse("admin:users_user_change", args=[obj.user.pk])
-            if obj.user.user_type == 'store' and obj.user.store_name:
-                return format_html(
-                    '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
-                    user_link, obj.user.store_name, obj.user.email
-                )
-            else:
-                return format_html(
-                    '<a href="{}" style="color: #28a745;">👤 {}</a><br><small>{}</small>',
-                    user_link, obj.user.first_name or obj.user.email.split('@')[0], obj.user.email
-                )
+            if obj.user.first_name:
+                # Check if user might be a store by looking for Store records
+                try:
+                    from users.models import Store
+                    store = Store.objects.filter(name__icontains=obj.user.first_name).first()
+                    if store:
+                        return format_html(
+                            '<a href="{}" style="color: #0066cc;">🏪 {}</a><br><small>{}</small>',
+                            user_link, store.name, obj.user.email
+                        )
+                except:
+                    pass
+            
+            return format_html(
+                '<a href="{}" style="color: #28a745;">👤 {}</a><br><small>{}</small>',
+                user_link, obj.user.first_name or obj.user.email.split('@')[0], obj.user.email
+            )
         return "-"
     get_user_info.short_description = "User"
     get_user_info.admin_order_field = "user__email"
@@ -557,12 +577,18 @@ class CommentAdmin(admin.ModelAdmin):
     
     def get_user_type(self, obj):
         if obj.user:
-            if obj.user.user_type == 'store':
-                return format_html('<span style="color: #0066cc;">🏪 Store</span>')
+            # Check if user might be a store by looking for Store records
+            try:
+                from users.models import Store
+                store = Store.objects.filter(name__icontains=obj.user.first_name).first() if obj.user.first_name else None
+                if store:
+                    return format_html('<span style="color: #0066cc;">🏪 Store</span>')
+            except:
+                pass
             return format_html('<span style="color: #28a745;">👤 Individual</span>')
         return "-"
     get_user_type.short_description = "User Type"
-    get_user_type.admin_order_field = "user__user_type"
+    get_user_type.admin_order_field = "user__email"
     
     # Custom actions
     actions = ['delete_selected_comments', 'moderate_comments', 'analyze_comment_sentiment', 'export_comments', 'flag_inappropriate_comments']

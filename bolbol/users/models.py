@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import BaseUserManager
 
-from .utils import format_phone_number
+from .utils import format_phone_number, verify_phone_number
 
 
 
@@ -39,24 +39,11 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    USER_TYPES = [
-        ("individual", "Individual User"),
-        ("store", "Store/Business")
-    ]
-
     username = None
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=14, unique=True)
 
-    user_type = models.CharField(max_length=20, choices=USER_TYPES, default="individual")
-
     phone_verified = models.BooleanField(default=False)
-
-    store_name = models.CharField(max_length=100, blank=True, null=True)
-    store_description = models.TextField(blank=True, null=True)
-    store_logo = models.ImageField(upload_to="store_logos/", blank=True, null=True)
-    store_address = models.TextField(blank=True, null=True)
-    store_working_hours = models.CharField(max_length=200, blank=True, null=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["phone"]
@@ -69,8 +56,43 @@ class User(AbstractUser):
         if self.phone:
             try:
                 self.phone = format_phone_number(self.phone)
+                verify_phone_number(self.phone)
             except ValueError as e:
                 raise ValidationError({"phone": str(e)})
 
         if self.email:
             self.email = self.email.strip().lower()
+
+
+class Store(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    name = models.CharField(max_length=100)
+    category = models.ManyToManyField("products.category")
+    description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to="store_logos/", blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    opening_time = models.TimeField(blank=True, null=True)
+    closing_time = models.TimeField(blank=True, null=True)
+    address_link = models.URLField(blank=True, null=True)
+
+
+class StorePhone(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.SET_NULL, null=True, related_name="phones")
+    phone = models.CharField(max_length=14)
+
+    def clean(self):
+        super().clean()
+        if self.phone:
+            try:
+                self.phone = format_phone_number(self.phone)
+                verify_phone_number(self.phone)
+            except ValueError as e:
+                raise ValidationError({"phone": str(e)})
+            
+
+    class Meta:
+        unique_together = ("store", "phone")
+
+
+    def __str__(self):
+        return self.phone

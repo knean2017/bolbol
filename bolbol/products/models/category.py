@@ -10,6 +10,7 @@ class Category(models.Model):
     
     class Meta:
         verbose_name_plural = "Categories"
+        ordering = ["name"]
 
 
 class SubCategory(models.Model):
@@ -22,23 +23,31 @@ class SubCategory(models.Model):
     
     class Meta:
         verbose_name_plural = "Subcategories"
+        ordering = ["name"]
 
 
 class Attribute(models.Model):
+    STRING = "string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+
     TYPES = [
-        ("string", "String"),
-        ("integer", "Integer"),
-        ("float", "Float"),
-        ("boolean", "Boolean"),
+        (STRING, "String"),
+        (INTEGER, "Integer"),
+        (FLOAT, "Float"),
+        (BOOLEAN, "Boolean"),
     ]
+
     subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=50)
     data_type = models.CharField(
         max_length=50,
         choices=TYPES,
-        default="string"
+        default=STRING
     )
     
 
     def __str__(self):
         return self.name
+    

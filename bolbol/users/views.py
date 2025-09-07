@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import User
-from .utils import generate_otp, verify_otp
+from .utils import generate_otp, verify_otp, format_phone_number
 from .constants import OTP_TIMEOUT
 from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer, UserSerializer
 
@@ -16,7 +16,7 @@ from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginRespo
 class LoginAPIView(APIView):
     @swagger_auto_schema(request_body=LoginRequestSerializer)
     def post(self, request):
-        phone = request.data.get("phone")
+        phone = format_phone_number(request.data.get("phone"))
 
         if not phone:
             return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -32,7 +32,7 @@ class LoginAPIView(APIView):
 class VerifyOTPCodeAPIView(APIView):
     @swagger_auto_schema(request_body=VerifyOTPSerializer, responses={200: LoginResponseSerializer})
     def post(self, request):
-        phone = request.data.get("phone")
+        phone = format_phone_number(request.data.get("phone"))
         otp = request.data.get("otp")
 
         if not phone or not otp:
@@ -65,6 +65,6 @@ class UserAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.data
+        user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)

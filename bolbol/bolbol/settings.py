@@ -176,7 +176,7 @@ EMAIL_HOST_PASSWORD = 'lrrz heny vlrl hwgv'
 
 SIMPLE_JWT = {
     # Lifetimes
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),         # short-lived access token
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),         # short-lived access token
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),           # longer-lived refresh token
     'ROTATE_REFRESH_TOKENS': True,                         # optional: rotate refresh tokens after use
     'BLACKLIST_AFTER_ROTATION': True,                      # optional: blacklist used refresh tokens

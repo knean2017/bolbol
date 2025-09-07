@@ -1,8 +1,9 @@
 from django.db import models
 from django.db.models import F
 from django.urls import reverse
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 
 from ..constants import *
 from .category import SubCategory, Attribute
@@ -10,19 +11,33 @@ from .city import City
 
 
 class Product(models.Model):
+    BASIC = "basic"
+    PROMOTED = "promoted"
+    SUPER_OPPORTUNITY = "super_opportunity"
+    PREMIUM = "premium"
+    VIP = "vip"
+
+    APPROVED = "approved"
+    PENDING = "pending"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
     PROMOTION_LEVELS = (
-        ('basic', 'Basic'),
-        ('premium', 'Premium'),
-        ('vip', 'VIP'),
+        (BASIC, "Basic"),
+        (PROMOTED, "Promoted"),
+        (PREMIUM, "Premium"),
+        (VIP, "VIP"),
     )
+
     STATUS_LIST = (
-        ("pending", "Pending"),
-        ("accepted", "Accepted"),
-        ("rejected", "Rejected"),
-        ("expired", "Expired")
+        (APPROVED, "Approved"),
+        (PENDING, "Pending"),
+        (REJECTED, "Rejected"),
+        (EXPIRED, "Expired")
     )
 
     owner = models.ForeignKey("users.User", on_delete=models.SET_NULL, null=True, blank=True)
+    store = models.ForeignKey("users.Store", on_delete=models.SET_NULL, null=True, blank=True)
     category = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True)
 
@@ -41,25 +56,31 @@ class Product(models.Model):
     promotion_level = models.CharField(
         max_length=10,
         choices=PROMOTION_LEVELS,
-        default="basic"
+        default=BASIC
     )
     status = models.CharField(
         max_length=16,
         choices=STATUS_LIST,
         null=True,
         blank=True,
-        default="pending"
+        default=PENDING
     )
     image = models.ImageField(upload_to="images/", blank=True, null=True)
 
-    barter_available = models.BooleanField(default=False)
-    credit_available = models.BooleanField(default=False)
-    delivery_available = models.BooleanField(default=False)
+    is_product_new = models.BooleanField(default=False)
+    is_mediator = models.BooleanField(default=False)
+    is_barter_available = models.BooleanField(default=False)
+    is_credit_available = models.BooleanField(default=False)
+    is_delivery_available = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+
     def __str__(self):
         return self.title
     
@@ -72,7 +93,31 @@ class Product(models.Model):
         path = reverse("product-detail", kwargs={"prod_id": self.id})
         return f"{settings.DOMAIN}{path}"
 
+
 class ProductDetail(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     attribute = models.ForeignKey(Attribute, on_delete=models.CASCADE)
     value = models.CharField(max_length=50)
+
+    
+    def clean(self):
+        data_type = self.attribute.data_type
+
+        if data_type == self.attribute.INTEGER:
+            try:
+                int(self.value)
+            except ValueError:
+                raise ValidationError({"value": "Must be an integer."})
+        
+        elif data_type == self.attribute.FLOAT:
+            try:
+                float(self.value)
+            except ValueError:
+                raise ValidationError({"value": "Must be a float."})
+            
+        elif data_type == self.attribute.BOOLEAN:
+            try:
+                bool(self.value)
+            except ValueError:
+                raise ValidationError({"value": "Must be a boolean."})
+        
