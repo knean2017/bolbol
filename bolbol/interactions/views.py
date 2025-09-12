@@ -13,17 +13,23 @@ from products.models import Product
 
 class BookmarkAPIView(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
        bookmarks = Bookmark.objects.filter(user=request.user)
        serializer = BookmarkSerializer(bookmarks, many=True)
        return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def post(self, request, product_id):
+    @swagger_auto_schema(request_body=BookmarkSerializer)
+    def post(self, request):
+        product_id = request.data.get("product_id")
+        if not product_id:
+            return Response({"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
         product = get_object_or_404(Product, id=product_id)
         serializer = BookmarkSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(product=product)
+            serializer.save(user=request.user, product=product)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

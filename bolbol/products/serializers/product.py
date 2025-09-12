@@ -18,12 +18,10 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         details_data = validated_data.pop("product_details", [])
-        print(details_data)
         
         product = Product.objects.create(**validated_data)
         
         for detail in details_data:
-            print(detail)
             ProductDetail.objects.create(product=product, **detail)
         
         return product

@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
@@ -35,7 +35,7 @@ class ProductListAPIView(APIView):
         return [AllowAny()]
     
     def get(self, request):
-        queryset = Product.objects.filter(status=Product.APPROVED)
+        queryset = Product.approved.all()
         
         query_params = request.GET
         category_pk = query_params.get("category_id")
@@ -56,22 +56,44 @@ class ProductListAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(request_body=ProductSerializer)
-    def post(self,request):
+    def post(self, request):
         data = request.data
         serializer = ProductSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductDetailAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get(self, request, prod_id):
         product = get_object_or_404(Product, id=prod_id)
-
-        if product.status != "accepted":
-            return Response({"error": "Product is not accepted"}, status=status.HTTP_400_BAD_REQUEST)
+        user = request.user
+        
+        if product.owner == user:
+            serializer = ProductSerializer(product)
+            return Response({"data": serializer.data})
+         
+        if product.status != Product.APPROVED:
+            return Response({"error": "Product is not approved"}, status=status.HTTP_400_BAD_REQUEST)
         product.increment_view()
         serializer = ProductSerializer(product)
         return Response({"data": serializer.data})
+    
+
+class UserProductsAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+       
+        products = Product.objects.filter(owner=user)
+        
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     

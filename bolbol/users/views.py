@@ -8,9 +8,20 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import User
-from .utils import generate_otp, verify_otp, format_phone_number
+from .utils import generate_otp, cache_otp, verify_otp, format_phone_number
 from .constants import OTP_TIMEOUT
-from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer, UserSerializer
+from .serializers import LoginRequestSerializer, VerifyOTPSerializer, LoginResponseSerializer, UserSerializer, RegisterUserSerializer
+
+
+class RegisterAPIView(APIView):
+    @swagger_auto_schema(request_body=RegisterUserSerializer)
+    def post(self, request):
+        data = request.data
+        serializer = RegisterUserSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "Okay"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST   )
 
 
 class LoginAPIView(APIView):
@@ -21,8 +32,11 @@ class LoginAPIView(APIView):
         if not phone:
             return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
         
+        if not User.objects.filter(phone=phone).exists():
+            return Response({"error": "User with this phone number does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        
         otp = generate_otp(phone)
-        cache.set(f"otp:{phone}", otp, timeout=OTP_TIMEOUT)
+        cache_otp(phone, otp)
 
         print(f"{phone}: {otp}") # Test
 
@@ -39,11 +53,14 @@ class VerifyOTPCodeAPIView(APIView):
             return Response({"error": "Phone number and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
         
         if not verify_otp(phone, otp):
-            return Response({f"error": "OTP is not correct"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
         
         cache.delete(f"otp:{phone}")
 
         user = User.objects.filter(phone=phone).first()
+        
+        if not user:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)  
         
         if not user.phone_verified:
             user.phone_verified = True

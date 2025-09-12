@@ -10,6 +10,11 @@ from .category import SubCategory, Attribute
 from .city import City
 
 
+class ProductObjects(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(status=Product.APPROVED)
+
+
 class Product(models.Model):
     BASIC = "basic"
     PROMOTED = "promoted"
@@ -25,6 +30,7 @@ class Product(models.Model):
     PROMOTION_LEVELS = (
         (BASIC, "Basic"),
         (PROMOTED, "Promoted"),
+        (SUPER_OPPORTUNITY, "Super Opportunity"),
         (PREMIUM, "Premium"),
         (VIP, "VIP"),
     )
@@ -54,7 +60,7 @@ class Product(models.Model):
     views_count = models.PositiveIntegerField(default=0)
 
     promotion_level = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=PROMOTION_LEVELS,
         default=BASIC
     )
@@ -76,6 +82,9 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
+    objects = models.Manager() 
+    approved = ProductObjects()
 
     class Meta:
         ordering = ["-updated_at"]

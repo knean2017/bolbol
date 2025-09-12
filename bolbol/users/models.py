@@ -46,7 +46,7 @@ class User(AbstractUser):
     phone_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["phone"]
+    REQUIRED_FIELDS = ["phone", "first_name", "last_name"]
 
     objects = UserManager()
 

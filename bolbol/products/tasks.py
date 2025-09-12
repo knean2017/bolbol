@@ -13,6 +13,6 @@ def send_email_notification(product_id):
         "New Product Submitted",
         f"Thank you for submitting your product. You can view it here: {url}",
         settings.EMAIL_HOST_USER,
-        ["knean6773@gmail.com"],
+        ["knean6703@gmail.com"],
         fail_silently=False,
     )
