@@ -1,0 +1,14 @@
+# Docker ignore file
+.git
+.gitignore
+README.md
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.DS_Store
+*.log
+.vscode/
+.idea/
+db.sqlite3
+*.sqlite3

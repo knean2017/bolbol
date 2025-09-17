@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: bolbol_db
+      POSTGRES_USER: bolbol_user
+      POSTGRES_PASSWORD: bolbol_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # Django Web Application
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./bolbol:/app
+    environment:
+      - DATABASE_URL=postgresql://bolbol_user:bolbol_password@db:5432/bolbol_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+  # Celery Worker
+  celery:
+    build: .
+    volumes:
+      - ./bolbol:/app
+    environment:
+      - DATABASE_URL=postgresql://bolbol_user:bolbol_password@db:5432/bolbol_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    command: celery -A bolbol worker --loglevel=info
+
+volumes:
+  postgres_data:
