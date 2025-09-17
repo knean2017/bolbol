@@ -101,7 +101,3 @@ docker-compose up --build
 - [ ] API usage examples
 - [ ] Deployment guide
 - [ ] Development setup instructions
-
----
-
-**Focus**: Get the basics right first, then add advanced features. Security and stability over new features.
